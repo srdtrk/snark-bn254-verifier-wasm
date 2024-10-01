@@ -23,12 +23,16 @@ mod hash_to_field;
 mod plonk;
 mod transcript;
 
+// #[global_allocator]
+// static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 #[wasm_bindgen]
 /// WASM to verify a groth16 proof
-pub fn verify_groth16_wasm(proof: &[u8], vk: &[u8], public_inputs: &[u8]) -> bool {
+pub fn verify_groth16_wasm(proof: Vec<u8>, vk: Vec<u8>, public_inputs: Vec<u8>) -> bool {
+    println!("proof: {:?}", proof);
     let frs: Vec<Fr> = public_inputs.chunks(8).map(|slice| Fr::from_slice(slice).unwrap()).collect();
-    let proof = load_groth16_proof_from_bytes(proof).unwrap();
-    let vk = load_groth16_verifying_key_from_bytes(vk).unwrap();
+    let proof = load_groth16_proof_from_bytes(&proof).unwrap();
+    let vk = load_groth16_verifying_key_from_bytes(&vk).unwrap();
 
     verify_groth16(&vk, &proof, &frs).is_ok()
 }
