@@ -32,3 +32,13 @@ pub fn verify_groth16_wasm(proof: &[u8], vk: &[u8], public_inputs: &[u8]) -> boo
 
     verify_groth16(&vk, &proof, &frs).is_ok()
 }
+
+#[wasm_bindgen]
+/// WASM to verify a plonk proof
+pub fn verify_plonk_wasm(proof: &[u8], vk: &[u8], public_inputs: &[u8]) -> bool {
+    let frs: Vec<Fr> = public_inputs.chunks(8).map(|slice| Fr::from_slice(slice).unwrap()).collect();
+    let proof = load_plonk_proof_from_bytes(proof).unwrap();
+    let vk = load_plonk_verifying_key_from_bytes(vk).unwrap();
+
+    verify_plonk(&vk, &proof, &frs).is_ok()
+}
