@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNARK Verifier</title>
+</head>
+<body>
+    <h1>SNARK Verifier</h1>
+    
+    <h2>Groth16 Verification</h2>
+    <select id="groth16ProofSelect">
+        <option value="fibonacci_groth16_proof.bin">Fibonacci</option>
+        <option value="is-prime_groth16_proof.bin">Is Prime</option>
+        <option value="sha2_groth16_proof.bin">SHA2</option>
+        <option value="tendermint_groth16_proof.bin">Tendermint</option>
+    </select>
+    <button id="verifyGroth16">Verify Groth16</button>
+    <p id="groth16Result"></p>
+
+    <h2>PLONK Verification</h2>
+    <select id="plonkProofSelect">
+        <option value="fibonacci_plonk_proof.bin">Fibonacci</option>
+        <option value="is-prime_plonk_proof.bin">Is Prime</option>
+        <option value="sha2_plonk_proof.bin">SHA2</option>
+        <option value="tendermint_plonk_proof.bin">Tendermint</option>
+    </select>
+    <button id="verifyPlonk">Verify PLONK</button>
+    <p id="plonkResult"></p>
+
+    <script type="module">
+        import init, { verify_groth16_wasm, verify_plonk_wasm } from './pkg/snark_bn254_verifier.js';
+
+        // Test data (replace with actual data in a real scenario)
+        const testData = {
+            groth16: {
+                vk: new Uint8Array([1, 2, 3, 4, 5]), // Example verification key
+                proof: new Uint8Array([10, 20, 30, 40, 50]), // Example proof
+                publicInputs: new Uint8Array([100, 200, 300]) // Example public inputs
+            },
+            plonk: {
+                vk: new Uint8Array([5, 4, 3, 2, 1]), // Example verification key
+                proof: new Uint8Array([50, 40, 30, 20, 10]), // Example proof
+                publicInputs: new Uint8Array([300, 200, 100]) // Example public inputs
+            }
+        };
+
+        async function initializeWasm() {
+            await init();
+        }
+
+        async function verifyGroth16() {
+            try {
+                const selectedProof = document.getElementById('groth16ProofSelect').value;
+                const proofData = await fetchProofData(selectedProof);
+                const { vk, proof, publicInputs } = proofData;
+                const result = await verify_groth16_wasm(vk, proof, publicInputs);
+                document.getElementById('groth16Result').textContent = `Groth16 Verification Result: ${result}`;
+            } catch (error) {
+                console.error('Groth16 verification error:', error);
+                document.getElementById('groth16Result').textContent = 'Groth16 Verification Error: ' + error.message;
+            }
+        }
+
+        async function verifyPlonk() {
+            try {
+                const selectedProof = document.getElementById('plonkProofSelect').value;
+                const proofData = await fetchProofData(selectedProof);
+                const { vk, proof, publicInputs } = proofData;
+                const result = await verify_plonk_wasm(vk, proof, publicInputs);
+                document.getElementById('plonkResult').textContent = `PLONK Verification Result: ${result}`;
+            } catch (error) {
+                console.error('PLONK verification error:', error);
+                document.getElementById('plonkResult').textContent = 'PLONK Verification Error: ' + error.message;
+            }
+        }
+
+        async function fetchProofData(filename) {
+            const response = await fetch(`binaries/${filename}`);
+            const arrayBuffer = await response.arrayBuffer();
+
+            // Parse the binary data and extract vk, proof, and publicInputs
+            // This is a placeholder and should be implemented based on your binary format
+            return {
+                vk: new Uint8Array(arrayBuffer.slice(0, 100)),
+                proof: new Uint8Array(arrayBuffer.slice(100, 200)),
+                publicInputs: new Uint8Array(arrayBuffer.slice(200))
+            };
+        }
+
+        initializeWasm().then(() => {
+            document.getElementById('verifyGroth16').addEventListener('click', verifyGroth16);
+            document.getElementById('verifyPlonk').addEventListener('click', verifyPlonk);
+        });
+    </script>
+</body>
+</html>
