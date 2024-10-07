@@ -1,16 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 
 	"github.com/consensys/gnark-crypto/ecc"
-	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/backend/plonk" // or "github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/examples/cubic"
 	"github.com/consensys/gnark/frontend"
-	"github.com/consensys/gnark/frontend/cs/r1cs"
+	"github.com/consensys/gnark/frontend/cs/scs"
+	"github.com/consensys/gnark/test/unsafekzg"
 )
 
 func saveVerificationKey(vk plonk.VerifyingKey, filename string) error {
@@ -44,39 +43,34 @@ func saveProof(proof plonk.Proof, filename string) error {
 }
 
 func main() {
-	// Assume vk and proof are already generated
-
 	var circuit cubic.Circuit
 
 	// compile a circuit
-	_r1cs, _ := frontend.Compile(ecc.BN254.ScalarField(), r1cs.NewBuilder, &circuit)
+	scs, err := frontend.Compile(ecc.BN254.ScalarField(), scs.NewBuilder, &circuit)
+	if err != nil {
+		fmt.Printf("Error compiling circuit: %v\n", err)
+		return
+	}
 
-	// R1CS implements io.WriterTo and io.ReaderFrom
-	var buf bytes.Buffer
-	_, _ = _r1cs.WriteTo(&buf)
+	// Run the dummy setup.
+	srs, srsLagrange, err := unsafekzg.NewSRS(scs)
+	if err != nil {
+		fmt.Printf("Error creating SRS: %v\n", err)
+		return
+	}
 
-	// gnark objects (R1CS, ProvingKey, VerifyingKey, Proof) must be instantiated like so:
-	newR1CS := groth16.NewCS(ecc.BN254)
-	_, _ = newR1CS.ReadFrom(&buf)
-
-	// setup
-	_, vk, _ := groth16.Setup(_r1cs)
+	_, vk, err := plonk.Setup(scs, srs, srsLagrange)
+	if err != nil {
+		fmt.Printf("Error in Plonk setup: %v\n", err)
+		return
+	}
 
 	// Save verification key
-	err := saveVerificationKey(vk, "plonk_vk.bin")
+	err = saveVerificationKey(vk, "plonk_vk.bin")
 	if err != nil {
 		fmt.Printf("Error saving verification key: %v\n", err)
 		return
 	}
 
-	/*
-		// Save proof
-		err = saveProof(proof, "proof.bin")
-		if err != nil {
-			fmt.Printf("Error saving proof: %v\n", err)
-			return
-		}
-	*/
-
-	fmt.Println("Verification key and proof saved successfully.")
+	fmt.Println("Verification key saved successfully.")
 }

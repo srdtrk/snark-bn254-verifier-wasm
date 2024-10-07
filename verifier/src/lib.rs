@@ -25,9 +25,9 @@ use hex;
 
 // cd sp1/crates/prover
 // RUST_LOG=info make build-circuits
-const PLONK_VK_BYTES: &[u8] = include_bytes!(concat!(env!("HOME"), "/.sp1/circuits/v2.0.0/plonk_vk.bin"));
+const PLONK_VK_BYTES: &[u8] = include_bytes!("../../go/plonk_vk.bin"));
 const GROTH16_VK_BYTES: &[u8] =
-    include_bytes!(concat!(env!("HOME"), "/.sp1/circuits/v2.0.0/groth16_vk.bin"));
+    include_bytes!(concat!(env!("HOME"), "../../go/groth16_vk.bin"));
 
 //use num_bigint::BigUint;
 // use num_traits::Num;
