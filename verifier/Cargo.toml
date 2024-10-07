@@ -25,6 +25,8 @@ sha2 = "0.10.8"
 thiserror = "1.0.63"
 wasm-bindgen = "0.2.93"
 wee_alloc = "0.4.5"
-web-sys = "0.3.70"
-# hex = "0.4.3"
+web-sys = { version = "0.3.70", features = ["Window"] }
+serde_json = "1.0.128"
+hex = "0.4.3"
+# Not compatible with wasm.
 # sp1-sdk = "2.0.0"

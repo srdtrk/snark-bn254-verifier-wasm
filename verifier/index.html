@@ -29,7 +29,7 @@
     <p id="plonkResult"></p>
 
     <script type="module">
-        import init, { verify_groth16_wasm, verify_plonk_wasm } from './pkg/snark_bn254_verifier.js';
+        import init, { verify_proof, ProofMode } from './pkg/snark_bn254_verifier.js';
 
         // Test data (replace with actual data in a real scenario)
         const testData = {
@@ -52,9 +52,9 @@
         async function verifyGroth16() {
             try {
                 const selectedProof = document.getElementById('groth16ProofSelect').value;
-                const proofData = await fetchProofData(selectedProof);
-                const { vk, proof, publicInputs } = proofData;
-                const result = await verify_groth16_wasm(vk, proof, publicInputs);
+                const proofFile = `binaries/${selectedProof.replace('.bin', '.bin.json')}`;
+                const proofJson = await fetchProofJson(proofFile);
+                const result = await verify_proof(proofJson, ProofMode.Groth16);
                 document.getElementById('groth16Result').textContent = `Groth16 Verification Result: ${result}`;
             } catch (error) {
                 console.error('Groth16 verification error:', error);
@@ -65,9 +65,9 @@
         async function verifyPlonk() {
             try {
                 const selectedProof = document.getElementById('plonkProofSelect').value;
-                const proofData = await fetchProofData(selectedProof);
-                const { vk, proof, publicInputs } = proofData;
-                const result = await verify_plonk_wasm(vk, proof, publicInputs);
+                const proofFile = `binaries/${selectedProof.replace('.bin', '.json')}`;
+                const proofJson = await fetchProofJson(proofFile);
+                const result = await verify_proof(proofJson, ProofMode.Plonk);
                 document.getElementById('plonkResult').textContent = `PLONK Verification Result: ${result}`;
             } catch (error) {
                 console.error('PLONK verification error:', error);
@@ -75,6 +75,15 @@
             }
         }
 
+        async function fetchProofJson(filename) {
+            const response = await fetch(filename);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.text();
+        }
+
+        /*
         async function fetchProofData(filename) {
             const response = await fetch(`binaries/${filename}`);
             const arrayBuffer = await response.arrayBuffer();
@@ -87,6 +96,7 @@
                 publicInputs: new Uint8Array(arrayBuffer.slice(200))
             };
         }
+        */
 
         initializeWasm().then(() => {
             document.getElementById('verifyGroth16').addEventListener('click', verifyGroth16);

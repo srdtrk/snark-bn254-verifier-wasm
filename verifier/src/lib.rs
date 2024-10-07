@@ -3,6 +3,8 @@
 
 //! This crate provides verifiers for Groth16 and Plonk zero-knowledge proofs.
 
+// use sp1_sdk::{SP1ProofWithPublicValues};
+
 use bn::Fr;
 use groth16::{
     error::Groth16Error, load_groth16_proof_from_bytes, load_groth16_verifying_key_from_bytes,
@@ -13,8 +15,24 @@ use plonk::{
     verify_plonk,
 };
 use wasm_bindgen::prelude::*;
+use serde_json::Value;
+use std::io::Read;
+use num_bigint::BigUint;
+use num_traits::Num;
+use serde_json;
+use hex;
 
-// use sp1_sdk::{proto::network::ProofMode, SP1ProofWithPublicValues};
+
+// cd sp1/crates/prover
+// RUST_LOG=info make build-circuits
+const PLONK_VK_BYTES: &[u8] = include_bytes!(concat!(env!("HOME"), "/.sp1/circuits/v2.0.0/plonk_vk.bin"));
+const GROTH16_VK_BYTES: &[u8] =
+    include_bytes!(concat!(env!("HOME"), "/.sp1/circuits/v2.0.0/groth16_vk.bin"));
+
+//use num_bigint::BigUint;
+// use num_traits::Num;
+// use sp1_sdk::{SP1ProofWithPublicValues};
+
 // use num_bigint::BigUint;
 
 mod constants;
@@ -25,60 +43,107 @@ mod hash_to_field;
 mod plonk;
 mod transcript;
 
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy)]
+pub enum ProofMode {
+    Groth16,
+    Plonk,
+}
+
 // #[global_allocator]
 // static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
 
 #[wasm_bindgen]
 /// Test
 extern {
-    pub fn alert(s: &str);
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
 }
 
-#[wasm_bindgen]
+// #[wasm_bindgen]
 /// WASM to verify a groth16 proof
-pub fn verify_groth16_wasm(proof: &[u8], vk: &[u8], public_inputs: &[u8]) -> Result<bool, JsValue> {
-
-    alert(&format!("Public inputs length: {}", public_inputs.len()));
-
-    let frs: Vec<Fr> = public_inputs
-        .chunks_exact(32)
-        .map(Fr::from_slice)
-        .collect::<Result<_, _>>()
-        .map_err(|e| JsValue::from_str(&format!("Invalid public input: {}", e)))?;
+pub fn verify_groth16_wasm(proof: &[u8], vk: &[u8], public_inputs: &[Fr]) -> Result<bool, JsValue> {
+    log(&format!("Public inputs length: {}", public_inputs.len()));
+    log(&format!("Public inputs #1: {:?}", public_inputs[0]));
+    log(&format!("Public inputs #2: {:?}", public_inputs[1]));
 
     let proof = load_groth16_proof_from_bytes(proof)
         .map_err(|e| JsValue::from_str(&format!("Invalid proof: {}", e)))?;
+
+    log(&format!("Proof:"));
         
     let vk = load_groth16_verifying_key_from_bytes(vk)
         .map_err(|e| JsValue::from_str(&format!("Invalid verification key: {}", e)))?;
 
-    Ok(verify_groth16(&vk, &proof, &frs).is_ok())
+    log(&format!("VK"));
+
+    Ok(verify_groth16(&vk, &proof, public_inputs).is_ok())
 }
 
-#[wasm_bindgen]
-/// WASM to verify a plonk proof
-pub fn verify_plonk_wasm(proof: &[u8], vk: &[u8], public_inputs: &[u8]) -> Result<bool, JsValue> {
-    let frs: Vec<Fr> = public_inputs
-        .chunks_exact(32)
-        .map(Fr::from_slice)
-        .collect::<Result<_, _>>()
-        .map_err(|e| JsValue::from_str(&format!("Invalid public input: {}", e)))?;
 
+// #[wasm_bindgen]
+/// WASM to verify a plonk proof
+pub fn verify_plonk_wasm(proof: &[u8], vk: &[u8], public_inputs: &[Fr]) -> Result<bool, JsValue> {
     let proof = load_plonk_proof_from_bytes(proof)
         .map_err(|e| JsValue::from_str(&format!("Invalid proof: {}", e)))?;
 
     let vk = load_plonk_verifying_key_from_bytes(vk)
         .map_err(|e| JsValue::from_str(&format!("Invalid verification key: {}", e)))?;
 
-    Ok(verify_plonk(&vk, &proof, &frs).is_ok())
+    Ok(verify_plonk(&vk, &proof, public_inputs).is_ok())
 }
 
+
+#[wasm_bindgen]
+/// WASM to verify a proof using the specified method
+pub fn verify_proof(proof_json: &str, method: ProofMode) -> Result<bool, JsValue> {
+    // Parse the JSON string
+    let json: Value = serde_json::from_str(proof_json)
+        .map_err(|e| JsValue::from_str(&format!("Failed to parse JSON: {}", e)))?;
+
+    // Extract proof and public inputs from JSON
+    let raw_proof = json["raw_proof"].as_str()
+        .ok_or_else(|| JsValue::from_str("Failed to extract proof from JSON"))?;
+    let public_inputs = json["public_inputs"].as_array()
+        .ok_or_else(|| JsValue::from_str("Failed to extract public inputs from JSON"))?;
+
+    // Convert hex proof to bytes
+    let proof_bytes = hex::decode(raw_proof)
+        .map_err(|e| JsValue::from_str(&format!("Failed to decode proof hex: {}", e)))?;
+
+    // Convert public inputs to byte representations
+    let vkey_hash = BigUint::from_str_radix(&public_inputs[0].as_str().unwrap(), 10)
+        .unwrap()
+        .to_bytes_be();
+    let committed_values_digest = BigUint::from_str_radix(&public_inputs[1].as_str().unwrap(), 10)
+        .unwrap()
+        .to_bytes_be();
+
+    let vkey_hash = Fr::from_slice(&vkey_hash).expect("Unable to read vkey_hash");
+    let committed_values_digest = Fr::from_slice(&committed_values_digest)
+        .expect("Unable to read committed_values_digest");
+
+    // Read VK from the appropriate binary
+    let vk_bytes = match method {
+        ProofMode::Groth16 => GROTH16_VK_BYTES,
+        ProofMode::Plonk => PLONK_VK_BYTES,
+    };
+
+    // Call the appropriate verification function based on the method
+    match method {
+        ProofMode::Groth16 => verify_groth16_wasm(&proof_bytes, &vk_bytes, &[vkey_hash, committed_values_digest]),
+        ProofMode::Plonk => verify_plonk_wasm(&proof_bytes, &vk_bytes, &[vkey_hash, committed_values_digest]),
+    }
+}
+
+
 /*
+// So SP1ProofWithPublicValues can't be used because SP1 SDK is not compatible with wasm.
 #[wasm_bindgen]
 /// WASM to verify a proof using SP1 to read proof and public inputs
 pub fn verify_proof(proof_file: &str, method: ProofMode) -> Result<bool, JsValue> {
     // Load the saved proof and convert it to the specified proof mode
+    let _ = SP1ProofWithPublicValues::load(proof_file);
     let (raw_proof, public_inputs) = SP1ProofWithPublicValues::load(proof_file)
         .map(|sp1_proof_with_public_values| match method {
             ProofMode::Groth16 => {
@@ -104,11 +169,14 @@ pub fn verify_proof(proof_file: &str, method: ProofMode) -> Result<bool, JsValue
         .unwrap()
         .to_bytes_be();
 
+    
     // Call the appropriate verification function based on the method
     match method {
         ProofMode::Groth16 => verify_groth16_wasm(&raw_proof, &vkey_hash, &committed_values_digest),
         ProofMode::Plonk => verify_plonk_wasm(&raw_proof, &vkey_hash, &committed_values_digest),
         _ => Err(JsValue::from_str("Invalid proof mode")),
     }
+
+    Ok(true)
 }
 */

@@ -9,6 +9,14 @@ use crate::{
 };
 
 use super::error::Groth16Error;
+use crate::wasm_bindgen;
+
+#[wasm_bindgen]
+/// Test
+extern {
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
+}
 
 pub(crate) fn load_groth16_proof_from_bytes(buffer: &[u8]) -> Result<Groth16Proof, Groth16Error> {
 
@@ -34,16 +42,27 @@ pub(crate) fn load_groth16_verifying_key_from_bytes(
     buffer: &[u8],
 ) -> Result<Groth16VerifyingKey, Groth16Error> {
 
+    // log(&format!("buffer: {:?}", buffer));
+
     if buffer.len() < 292 {
+        log(&format!("buffer.len() < 292"));
         return Err(Groth16Error::PrepareInputsFailed);
     }
 
+    log(&format!("caling unchecked_compressed_x_to_()..."));
+
     let g1_alpha = unchecked_compressed_x_to_g1_point(&buffer[..32])?;
+    log(&format!("g1_alpha: {:?}", g1_alpha));
     let g1_beta = unchecked_compressed_x_to_g1_point(&buffer[32..64])?;
+    log(&format!("g1_beta: {:?}", g1_beta));
     let g2_beta = unchecked_compressed_x_to_g2_point(&buffer[64..128])?;
+    log(&format!("g2_beta: {:?}", g2_beta));
     let g2_gamma = unchecked_compressed_x_to_g2_point(&buffer[128..192])?;
+    log(&format!("g2_gamma: {:?}", g2_gamma));
     let g1_delta = unchecked_compressed_x_to_g1_point(&buffer[192..224])?;
+    log(&format!("g1_delta: {:?}", g1_delta));
     let g2_delta = unchecked_compressed_x_to_g2_point(&buffer[224..288])?;
+    log(&format!("g2_delta: {:?}", g2_delta));
 
     let num_k = u32::from_be_bytes([buffer[288], buffer[289], buffer[290], buffer[291]]);
     let mut k = Vec::new();
