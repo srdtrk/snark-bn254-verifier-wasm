@@ -68,12 +68,16 @@ pub(crate) fn load_groth16_verifying_key_from_bytes(
     let mut k = Vec::new();
     let mut offset = 292;
 
+    log(&format!("num_k: {:?}", num_k));
+
     // TODO: Add additional check for buffer inside the function.
     if buffer.len() < (offset + 32 * num_k as usize) {
+        log(&format!("buffer.len() < (offset + 32 * num_k as usize)"));
         return Err(Groth16Error::PrepareInputsFailed);
     }
 
     for _ in 0..num_k {
+        log(&format!("offset: {:?}", offset));
         let point = unchecked_compressed_x_to_g1_point(&buffer[offset..offset + 32])?;
         k.push(point);
         offset += 32;
@@ -99,9 +103,18 @@ pub(crate) fn load_groth16_verifying_key_from_bytes(
         }
     }
 
+    log(&format!("offset: {:?}", offset));
+
+    log(&format!("calling unchecked_compressed_x_to_g2_point..."));
+    if buffer.len() < (offset + 128) {
+        log(&format!("buffer.len() < (offset + 128)"));
+        return Err(Groth16Error::PrepareInputsFailed);
+    }
     let commitment_key_g = unchecked_compressed_x_to_g2_point(&buffer[offset..offset + 64])?;
+    log(&format!("commitment_key_g: {:?}", commitment_key_g));
     let commitment_key_g_root_sigma_neg =
         unchecked_compressed_x_to_g2_point(&buffer[offset + 64..offset + 128])?;
+    log(&format!("commitment_key_g_root_sigma_neg: {:?}", commitment_key_g_root_sigma_neg));
 
     Ok(Groth16VerifyingKey {
         g1: Groth16G1 {

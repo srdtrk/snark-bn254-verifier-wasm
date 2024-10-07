@@ -65,7 +65,7 @@
         async function verifyPlonk() {
             try {
                 const selectedProof = document.getElementById('plonkProofSelect').value;
-                const proofFile = `binaries/${selectedProof.replace('.bin', '.json')}`;
+                const proofFile = `binaries/${selectedProof.replace('.bin', '.bin.json')}`;
                 const proofJson = await fetchProofJson(proofFile);
                 const result = await verify_proof(proofJson, ProofMode.Plonk);
                 document.getElementById('plonkResult').textContent = `PLONK Verification Result: ${result}`;
