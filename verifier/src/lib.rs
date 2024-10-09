@@ -2,8 +2,7 @@
 #![deny(missing_debug_implementations)]
 
 //! This crate provides verifiers for Groth16 and Plonk zero-knowledge proofs.
-
-// use sp1_sdk::{SP1ProofWithPublicValues};
+use sp1_sdk::{SP1Proof, SP1ProofWithPublicValues};
 
 use bn::Fr;
 use groth16::{
@@ -135,30 +134,37 @@ pub fn verify_proof(proof_json: &str, method: ProofMode) -> Result<bool, JsValue
     }
 }
 
-
-/*
 // So SP1ProofWithPublicValues can't be used because SP1 SDK is not compatible with wasm.
 #[wasm_bindgen]
 /// WASM to verify a proof using SP1 to read proof and public inputs
-pub fn verify_proof(proof_file: &str, method: ProofMode) -> Result<bool, JsValue> {
+pub fn verify_proof_sp1(contents: &[u8], method: ProofMode) -> Result<bool, JsValue> {
+
+    log("Deserializing proof from buffer");
     // Load the saved proof and convert it to the specified proof mode
-    let _ = SP1ProofWithPublicValues::load(proof_file);
-    let (raw_proof, public_inputs) = SP1ProofWithPublicValues::load(proof_file)
-        .map(|sp1_proof_with_public_values| match method {
-            ProofMode::Groth16 => {
-                let proof = sp1_proof_with_public_values
-                    .proof
-                    .try_as_groth_16()
-                    .unwrap();
-                (hex::decode(proof.raw_proof).unwrap(), proof.public_inputs)
-            }
-            ProofMode::Plonk => {
-                let proof = sp1_proof_with_public_values.proof.try_as_plonk().unwrap();
-                (hex::decode(proof.raw_proof).unwrap(), proof.public_inputs)
-            }
-            _ => panic!("Invalid proof mode. Use 'groth16' or 'plonk'."),
-        })
-        .expect("Failed to load proof");
+    // Passing the bytes directly instead of SP1ProofWithPublicValues::load()
+    let sp1_proof_with_public_values: SP1ProofWithPublicValues = bincode::deserialize(contents)
+        .expect("Failed to deserialize proof.");
+
+    log(&format!("Proof: {:?}", sp1_proof_with_public_values));
+
+    let (raw_proof, public_inputs) = match method {
+        ProofMode::Groth16 => {
+            log(&format!("Proof mode: Groth16"));
+            let proof = sp1_proof_with_public_values
+                .proof
+                .try_as_groth_16()
+                .unwrap();
+            (hex::decode(proof.raw_proof).unwrap(), proof.public_inputs)
+        }
+        ProofMode::Plonk => {
+            let proof = sp1_proof_with_public_values.proof.try_as_plonk().unwrap();
+            (hex::decode(proof.raw_proof).unwrap(), proof.public_inputs)
+        }
+        _ => panic!("Invalid proof mode. Use 'groth16' or 'plonk'."),
+    };
+
+    log(&format!("Proof: {:?}", raw_proof));
+    log(&format!("Public inputs: {:?}", public_inputs));
 
     // Convert public inputs to byte representations
     let vkey_hash = BigUint::from_str_radix(&public_inputs[0], 10)
@@ -168,14 +174,23 @@ pub fn verify_proof(proof_file: &str, method: ProofMode) -> Result<bool, JsValue
         .unwrap()
         .to_bytes_be();
 
-    
+    let vkey_hash = Fr::from_slice(&vkey_hash).expect("Unable to read vkey_hash");
+    let committed_values_digest = Fr::from_slice(&committed_values_digest)
+        .expect("Unable to read committed_values_digest");
+
+    log(&format!("vkey_hash: {:?}", vkey_hash));
+    log(&format!("committed_values_digest: {:?}", committed_values_digest));
+
+    // Read VK from the appropriate binary
+    let vk_bytes = match method {
+        ProofMode::Groth16 => GROTH16_VK_BYTES,
+        ProofMode::Plonk => PLONK_VK_BYTES,
+    };
+
     // Call the appropriate verification function based on the method
     match method {
-        ProofMode::Groth16 => verify_groth16_wasm(&raw_proof, &vkey_hash, &committed_values_digest),
-        ProofMode::Plonk => verify_plonk_wasm(&raw_proof, &vkey_hash, &committed_values_digest),
+        ProofMode::Groth16 => verify_groth16_wasm(&raw_proof, &vk_bytes,  &[vkey_hash, committed_values_digest]),
+        ProofMode::Plonk => verify_plonk_wasm(&raw_proof, &vk_bytes, &[vkey_hash, committed_values_digest]),
         _ => Err(JsValue::from_str("Invalid proof mode")),
     }
-
-    Ok(true)
 }
-*/
