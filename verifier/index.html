@@ -89,7 +89,7 @@
                 const timestamp = new Date().toISOString();
                 const filename = file.name;
                 const algorithm = "Groth16";
-                document.getElementById('groth16Result').innerHTML += `[]${timestamp}] (${filename}) <strong> ${algorithm} -> ${result} </strong><br />`;
+                document.getElementById('groth16Result').innerHTML += `[${timestamp}] (${filename}) <strong> ${algorithm} -> ${result} </strong><br />`;
             } catch (error) {
                 console.error('Groth16 verification error:', error);
                 document.getElementById('groth16Result').textContent = 'Groth16 (w/ SP1) Verification Error: ' + error.message;
