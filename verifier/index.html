@@ -29,7 +29,7 @@
     <h3>Option 1: Verify with Custom Proof File (Calls SP1 directly)</h3>
     <input type="file" id="groth16FileInput" accept=".bin">
     <button id="verifyGroth16WithSP1">Verify Groth16</button>
-    
+
     <h3>Option 2: Verify from Predefined Proofs</h3>
     <select id="groth16ProofSelect">
         <option value="fibonacci_groth16_proof.bin">Fibonacci</option>
@@ -78,20 +78,21 @@
                     throw new Error('Please select a file first.');
                 }
                 const file = fileInput.files[0];
-                console.log(file);
 
                 // Read the file as an ArrayBuffer
                 const arrayBuffer = await file.arrayBuffer();
-                // Convert ArrayBuffer to Uint8Array
                 const contents = new Uint8Array(arrayBuffer);
 
                 // Pass the bytes to verify_proof_sp1
                 const result = await verify_proof_sp1(contents, ProofMode.Groth16);
                 
-                document.getElementById('groth16Result').textContent = `Groth16 (SP1)Verification Result: ${result}`;
+                const timestamp = new Date().toISOString();
+                const filename = file.name;
+                const algorithm = "Groth16";
+                document.getElementById('groth16Result').innerHTML += `[]${timestamp}] (${filename}) <strong> ${algorithm} -> ${result} </strong><br />`;
             } catch (error) {
                 console.error('Groth16 verification error:', error);
-                document.getElementById('groth16Result').textContent = 'Groth16 (SP1) Verification Error: ' + error.message;
+                document.getElementById('groth16Result').textContent = 'Groth16 (w/ SP1) Verification Error: ' + error.message;
             }
         }
 

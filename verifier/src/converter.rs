@@ -118,17 +118,13 @@ pub(crate) fn compressed_x_to_g2_point(buf: &[u8]) -> Result<AffineG2, Error> {
 }
 
 pub(crate) fn unchecked_compressed_x_to_g2_point(buf: &[u8]) -> Result<AffineG2, Error> {
-    log(&format!("buf: {:?}", buf));
     if buf.len() != 64 {
-        log(&format!("buf.len() != 64: {:?}", buf.len()));
+        log(&format!("Invalid input buffer length: expected 64, got {}", buf.len()));
         return Err(Error::InvalidXLength);
     };
 
-    log(&format!("buf: {:?}", buf));
     let (x1, flag) = deserialize_with_flags(&buf[..32])?;
-    log(&format!("x1: {:?}", x1));
     let x0 = Fq::from_be_bytes_mod_order(&buf[32..64]).map_err(Error::Field)?;
-    log(&format!("x0: {:?}", x0));
     let x = Fq2::new(x0, x1);
 
     if flag == CompressedPointFlag::Infinity {
@@ -136,8 +132,6 @@ pub(crate) fn unchecked_compressed_x_to_g2_point(buf: &[u8]) -> Result<AffineG2,
     }
 
     let (y, neg_y) = AffineG2::get_ys_from_x_unchecked(x).ok_or(Error::InvalidPoint)?;
-    log(&format!("y: {:?}", y));
-    log(&format!("neg_y: {:?}", neg_y));
 
     match flag {
         CompressedPointFlag::Positive => Ok(AffineG2::new_unchecked(x, y)),

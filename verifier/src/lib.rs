@@ -61,19 +61,13 @@ extern {
 // #[wasm_bindgen]
 /// WASM to verify a groth16 proof
 pub fn verify_groth16_wasm(proof: &[u8], vk: &[u8], public_inputs: &[Fr]) -> Result<bool, JsValue> {
-    log(&format!("Public inputs length: {}", public_inputs.len()));
-    log(&format!("Public inputs #1: {:?}", public_inputs[0]));
-    log(&format!("Public inputs #2: {:?}", public_inputs[1]));
-
     let proof = load_groth16_proof_from_bytes(proof)
         .map_err(|e| JsValue::from_str(&format!("Invalid proof: {}", e)))?;
-
-    log(&format!("Proof:"));
         
     let vk = load_groth16_verifying_key_from_bytes(vk)
         .map_err(|e| JsValue::from_str(&format!("Invalid verification key: {}", e)))?;
 
-    log(&format!("VK"));
+    // log("Valid verification key file.");
 
     Ok(verify_groth16(&vk, &proof, public_inputs).is_ok())
 }
@@ -139,17 +133,18 @@ pub fn verify_proof(proof_json: &str, method: ProofMode) -> Result<bool, JsValue
 /// WASM to verify a proof using SP1 to read proof and public inputs
 pub fn verify_proof_sp1(contents: &[u8], method: ProofMode) -> Result<bool, JsValue> {
 
-    log("Deserializing proof from buffer");
+    // log("Deserializing proof from buffer");
+
     // Load the saved proof and convert it to the specified proof mode
     // Passing the bytes directly instead of SP1ProofWithPublicValues::load()
     let sp1_proof_with_public_values: SP1ProofWithPublicValues = bincode::deserialize(contents)
         .expect("Failed to deserialize proof.");
 
-    log(&format!("Proof: {:?}", sp1_proof_with_public_values));
+    // log(&format!("Proof: {:?}", sp1_proof_with_public_values));
 
     let (raw_proof, public_inputs) = match method {
         ProofMode::Groth16 => {
-            log(&format!("Proof mode: Groth16"));
+            // log(&format!("Proof mode: Groth16"));
             let proof = sp1_proof_with_public_values
                 .proof
                 .try_as_groth_16()
@@ -163,8 +158,8 @@ pub fn verify_proof_sp1(contents: &[u8], method: ProofMode) -> Result<bool, JsVa
         _ => panic!("Invalid proof mode. Use 'groth16' or 'plonk'."),
     };
 
-    log(&format!("Proof: {:?}", raw_proof));
-    log(&format!("Public inputs: {:?}", public_inputs));
+    // log(&format!("Proof: {:?}", raw_proof));
+    // log(&format!("Public inputs: {:?}", public_inputs));
 
     // Convert public inputs to byte representations
     let vkey_hash = BigUint::from_str_radix(&public_inputs[0], 10)
@@ -178,8 +173,8 @@ pub fn verify_proof_sp1(contents: &[u8], method: ProofMode) -> Result<bool, JsVa
     let committed_values_digest = Fr::from_slice(&committed_values_digest)
         .expect("Unable to read committed_values_digest");
 
-    log(&format!("vkey_hash: {:?}", vkey_hash));
-    log(&format!("committed_values_digest: {:?}", committed_values_digest));
+    // log(&format!("vkey_hash: {:?}", vkey_hash));
+    // log(&format!("committed_values_digest: {:?}", committed_values_digest));
 
     // Read VK from the appropriate binary
     let vk_bytes = match method {
