@@ -1,4 +1,4 @@
 [workspace]
-members = ["verifier"]
+members = ["verifier", "vk/circuits"]
 exclude = ["examples"]
 resolver = "2"

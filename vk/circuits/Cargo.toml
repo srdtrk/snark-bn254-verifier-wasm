@@ -1,0 +1,7 @@
+[package]
+name = "circuits"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sp1-sdk = { path = "../../../sp1/crates/sdk" }
