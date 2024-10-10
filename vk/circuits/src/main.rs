@@ -1,6 +1,7 @@
 
 use std::fs;
 
+use sp1_sdk::SP1_CIRCUIT_VERSION;
 use sp1_sdk::install::{install_circuit_artifacts, install_circuit_artifacts_dir};
 use std::path::PathBuf;
 
@@ -12,14 +13,17 @@ fn main() {
     println!("Downloading the artifacts...");
     let build_dir = install_circuit_artifacts_dir();
     println!("build_dir: {}", build_dir.display());
-    install_artifacts(build_dir);
+    // install_artifacts(build_dir);
 
     println!("Copying verification key files...");
 
     let home_dir = std::env::var("HOME").expect("HOME environment variable not set");
-    let source_dir = PathBuf::from(home_dir).join(".sp1/circuits/v2.0.0");
+    let source_dir = PathBuf::from(home_dir).join(format!(".sp1/circuits/{}", SP1_CIRCUIT_VERSION));
     let dest_dir = PathBuf::from("../../vk");
 
+    println!("source_dir: {}", source_dir.display());
+    println!("dest_dir: {}", dest_dir.display());
+    
     let files_to_copy = ["plonk_vk.bin", "groth16_vk.bin"];
 
     for file in files_to_copy.iter() {

@@ -22,9 +22,8 @@ use serde_json;
 use hex;
 
 
-// cd sp1/crates/prover
-// RUST_LOG=info make build-circuits
-const PLONK_VK_BYTES: &[u8] = include_bytes!("../../go/plonk_vk.bin"); // TODO!
+// see vk/circuits/src/main.rs
+const PLONK_VK_BYTES: &[u8] = include_bytes!("../../vk/plonk_vk.bin");
 const GROTH16_VK_BYTES: &[u8] = include_bytes!("../../vk/groth16_vk.bin");
 
 //use num_bigint::BigUint;

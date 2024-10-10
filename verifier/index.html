@@ -39,13 +39,14 @@
     <h1>SNARK Verifier</h1>
     
     <div style="background-color: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; border: 2px solid white;">
-        <h2>Groth16 Verification</h2>
+        <h2>Verification</h2>
         
         <h3>Verify with Custom Proof File (Calls SP1 directly)</h3>
-        <input type="file" id="groth16FileInput" accept=".bin">
-        <button id="verifyGroth16WithSP1">Verify Groth16</button>
+        <input type="file" id="proofFileInput" accept=".bin">
+        <button id="verifyGroth16WithSP1">Verify w/ Groth16</button>
+        <button id="verifyPlonkWithSP1">Verify w/ Plonk</button>
         
-        <p id="groth16Result"></p>
+        <p id="verificationResult"></p>
     </div>
 
     <script type="module">
@@ -55,9 +56,9 @@
             await init();
         }
 
-        async function verifyGroth16WithSP1() {
+        async function verifyProofWithSP1(proofMode) {
             try {
-                const fileInput = document.getElementById('groth16FileInput');
+                const fileInput = document.getElementById('proofFileInput');
                 if (!fileInput.files || fileInput.files.length === 0) {
                     throw new Error('Please select a file first.');
                 }
@@ -68,23 +69,31 @@
                 const contents = new Uint8Array(arrayBuffer);
 
                 // Pass the bytes to verify_proof_sp1
-                const result = await verify_proof_sp1(contents, ProofMode.Groth16);
+                const result = await verify_proof_sp1(contents, proofMode);
                 
                 const timestamp = new Date().toISOString();
                 const filename = file.name;
-                const algorithm = "Groth16";
-                document.getElementById('groth16Result').innerHTML += `[${timestamp}] INFO: (${filename}) ${algorithm} verification result: ${result ? 'VALID' : 'INVALID'}\n`;
+                const algorithm = proofMode === ProofMode.Groth16 ? "Groth16" : "Plonk";
+                document.getElementById('verificationResult').innerHTML += `[${timestamp}] INFO: (${filename}) ${algorithm} verification result: ${result ? 'VALID' : 'INVALID'}<br />\n`;
             } catch (error) {
                 const timestamp = new Date().toISOString();
-                const algorithm = "Groth16";
-                console.error('Groth16 verification error:', error);
-                document.getElementById('groth16Result').innerHTML += `[${timestamp}] ERR: ${algorithm} verification result: ${error}\n`;
+                const algorithm = proofMode === ProofMode.Groth16 ? "Groth16" : "Plonk";
+                console.error(`${algorithm} verification error:`, error);
+                document.getElementById('verificationResult').innerHTML += `[${timestamp}] ERR: ${algorithm} verification result: ${error} <br />\n`;
             }
+        }
+
+        function verifyGroth16WithSP1() {
+            verifyProofWithSP1(ProofMode.Groth16);
+        }
+
+        function verifyPlonkWithSP1() {
+            verifyProofWithSP1(ProofMode.Plonk);
         }
 
         initializeWasm().then(() => {
             document.getElementById('verifyGroth16WithSP1').addEventListener('click', verifyGroth16WithSP1);
-            // document.getElementById('verifyPlonk').addEventListener('click', verifyPlonk);
+            document.getElementById('verifyPlonkWithSP1').addEventListener('click', verifyPlonkWithSP1);
         });
     </script>
 </body>
