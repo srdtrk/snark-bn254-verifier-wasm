@@ -1,26 +1,14 @@
 ## Getting started
 ### Step 1.
-Generate the proving and verifying keys:
+In theory, the proving key is generated in `go/groth16.go` and the verifying key is generated in `go/plonk_vk.go`. 
 
-```
-cd sp1/crates/prover
-RUST_LOG=info make build-circuits
-```
+But the current go code isn't generating the keys correctly and they have to be sourced from the vk/ folder.
+
 ### Step 2.
-Generate the proofs and json files (for the public values):
-
-cd examples/script
-cargo run -- --proof-files
-
-### Step 3.
 Compile the wasm module and run the server:
 ```
 wasm-pack build --target web && python -m http.server 8000
 ```
 
-#### Test
-
-```
-wasm-pack test --headless --chrome
-```
+You can then pass the .bin files from the examples/binaries/ folder to the wasm module to verify the proofs.
 

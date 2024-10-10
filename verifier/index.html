@@ -75,8 +75,10 @@
                 const algorithm = "Groth16";
                 document.getElementById('groth16Result').innerHTML += `[${timestamp}] INFO: (${filename}) ${algorithm} verification result: ${result ? 'VALID' : 'INVALID'}\n`;
             } catch (error) {
+                const timestamp = new Date().toISOString();
+                const algorithm = "Groth16";
                 console.error('Groth16 verification error:', error);
-                document.getElementById('groth16Result').textContent = 'Groth16 (w/ SP1) Verification Error: ' + error.message;
+                document.getElementById('groth16Result').innerHTML += `[${timestamp}] ERR: ${algorithm} verification result: ${error}\n`;
             }
         }
 
