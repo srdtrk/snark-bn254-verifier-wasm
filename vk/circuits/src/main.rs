@@ -12,19 +12,25 @@ fn install_artifacts(build_dir: PathBuf) {
 fn main() {
     println!("Downloading the artifacts...");
     let build_dir = install_circuit_artifacts_dir();
-    println!("build_dir: {}", build_dir.display());
-    // install_artifacts(build_dir);
+    println!("-> build_dir: {}", build_dir.display());
 
-    println!("Copying verification key files...");
-
+    let files_to_copy = ["plonk_vk.bin", "groth16_vk.bin"];
+    
     let home_dir = std::env::var("HOME").expect("HOME environment variable not set");
     let source_dir = PathBuf::from(home_dir).join(format!(".sp1/circuits/{}", SP1_CIRCUIT_VERSION));
     let dest_dir = PathBuf::from("../../vk");
 
-    println!("source_dir: {}", source_dir.display());
-    println!("dest_dir: {}", dest_dir.display());
-    
-    let files_to_copy = ["plonk_vk.bin", "groth16_vk.bin"];
+    let all_files_exist = files_to_copy.iter().all(|file| source_dir.join(file).exists());
+    if !all_files_exist {
+        println!("Installing artifacts since they don't exist...");
+        install_artifacts(build_dir); 
+    } else {
+        println!("Artifacts already exist. Skipping installation.");
+    }
+
+    println!("Copying verification key files...");
+    println!("-> source_dir: {}", source_dir.display());
+    println!("-> dest_dir: {}", dest_dir.display());
 
     for file in files_to_copy.iter() {
         let source_path = source_dir.join(file);
