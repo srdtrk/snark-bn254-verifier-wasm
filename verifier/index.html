@@ -19,6 +19,20 @@
             margin: 10px 0;
             padding: 5px;
         }
+
+        #groth16Result {
+            background-color: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            width: 70%;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -59,7 +73,7 @@
                 const timestamp = new Date().toISOString();
                 const filename = file.name;
                 const algorithm = "Groth16";
-                document.getElementById('groth16Result').innerHTML += `[${timestamp}] (${filename}) <strong> ${algorithm} -> ${result} </strong><br />`;
+                document.getElementById('groth16Result').innerHTML += `[${timestamp}] INFO: (${filename}) ${algorithm} verification result: ${result ? 'VALID' : 'INVALID'}\n`;
             } catch (error) {
                 console.error('Groth16 verification error:', error);
                 document.getElementById('groth16Result').textContent = 'Groth16 (w/ SP1) Verification Error: ' + error.message;
