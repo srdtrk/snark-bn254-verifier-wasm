@@ -8,14 +8,14 @@ Retrieving the proofs and verification keys from gnark.
 
 Retrieve the verification keys from the `vk` folder.
 ```
-cd vk/circuits
+cd vk/circuits/
 cargo run
 ```
 
 ### Step 2.
 Compile the wasm module and run the server:
 ```
-cd verifier
+cd verifier/
 wasm-pack build --target web && python -m http.server 8000
 ```
 

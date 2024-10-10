@@ -14,12 +14,22 @@ use super::{
     PlonkProof,
 };
 
+use crate::wasm_bindgen;
+
+#[wasm_bindgen]
+/// Test
+extern {
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
+}
+
 pub(crate) fn load_plonk_verifying_key_from_bytes(
     buffer: &[u8],
 ) -> Result<PlonkVerifyingKey, PlonkError> {
 
     // Minimum size of the buffer is 372 bytes
     if buffer.len() < 372 {
+        log(&format!("Insufficient buffer length: expected at least 372 bytes, got {}", buffer.len()));
         return Err(PlonkError::GeneralError(Error::InvalidXLength));
     }
 
@@ -50,10 +60,21 @@ pub(crate) fn load_plonk_verifying_key_from_bytes(
     let mut qcp = Vec::new();
     let mut offset = 372;
 
+    // Check if buffer has enough bytes for all qcp points
+    if buffer.len() < (offset + 32 * num_qcp as usize) {
+        log(&format!("Insufficient buffer length: expected at least {} bytes, got {}", offset + 32 * num_qcp as usize, buffer.len()));
+        return Err(PlonkError::GeneralError(Error::InvalidXLength));
+    }
+
     for _ in 0..num_qcp {
         let point = unchecked_compressed_x_to_g1_point(&buffer[offset..offset + 32])?;
         qcp.push(point);
         offset += 32;
+    }
+
+    if buffer.len() < (offset + 160 + 33788) {
+        log(&format!("Insufficient buffer length: expected at least {} bytes, got {}", offset + 160 + 33788, buffer.len()));
+        return Err(PlonkError::GeneralError(Error::InvalidXLength));
     }
 
     let g1 = unchecked_compressed_x_to_g1_point(&buffer[offset..offset + 32])?;
@@ -126,6 +147,7 @@ pub(crate) fn load_plonk_verifying_key_from_bytes(
 pub(crate) fn load_plonk_proof_from_bytes(buffer: &[u8]) -> Result<PlonkProof, PlonkError> {
     // Minimum size of the buffer is 516 bytes
     if buffer.len() < 516 {
+        log(&format!("Insufficient buffer length: expected at least 516 bytes, got {}", buffer.len()));
         return Err(PlonkError::GeneralError(Error::InvalidXLength));
     }
 
@@ -140,6 +162,11 @@ pub(crate) fn load_plonk_proof_from_bytes(buffer: &[u8]) -> Result<PlonkProof, P
 
     let num_claimed_values =
         u32::from_be_bytes([buffer[512], buffer[513], buffer[514], buffer[515]]) as usize;
+
+    if buffer.len() < (516 + 32 * num_claimed_values) {
+        log(&format!("Insufficient buffer length: expected at least {} bytes, got {}", 516 + 32 * num_claimed_values, buffer.len()));
+        return Err(PlonkError::GeneralError(Error::InvalidXLength));
+    }
 
     let mut claimed_values = Vec::new();
     let mut offset = 516;
@@ -163,6 +190,12 @@ pub(crate) fn load_plonk_proof_from_bytes(buffer: &[u8]) -> Result<PlonkProof, P
 
     let mut bsb22_commitments = Vec::new();
     offset += 100;
+
+    if buffer.len() < (offset + 64 * num_bsb22_commitments) {
+        log(&format!("Insufficient buffer length: expected at least {} bytes, got {}", offset + 64 * num_bsb22_commitments, buffer.len()));
+        return Err(PlonkError::GeneralError(Error::InvalidXLength));
+    }
+    
     for _ in 0..num_bsb22_commitments {
         let commitment = uncompressed_bytes_to_g1_point(&buffer[offset..offset + 64])?;
         bsb22_commitments.push(commitment);
@@ -191,8 +224,9 @@ pub(crate) fn g1_to_bytes(g1: &AffineG1) -> Result<Vec<u8>, PlonkError> {
     // Minimum size of the buffer is 64 bytes
     // TODO: Check if the point is in the correct subgroup
 
-    let mut bytes: [u8; 64] = unsafe { core::mem::transmute(*g1) };
-    bytes[..32].reverse();
-    bytes[32..].reverse();
-    Ok(bytes.to_vec())
+    let mut bytes = Vec::with_capacity(64);
+    bytes.extend_from_slice(&g1.x().0.0.to_bytes_be());
+    bytes.extend_from_slice(&g1.y().0.0.to_bytes_be());
+
+    Ok(bytes)
 }

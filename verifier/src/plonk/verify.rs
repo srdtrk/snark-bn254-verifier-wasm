@@ -31,6 +31,15 @@ pub(crate) struct PlonkVerifyingKey {
     pub(crate) commitment_constraint_indexes: Vec<usize>,
 }
 
+use crate::wasm_bindgen;
+
+#[wasm_bindgen]
+/// Test
+extern {
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
+}
+
 /// Verifies a PLONK proof
 ///
 /// # Arguments

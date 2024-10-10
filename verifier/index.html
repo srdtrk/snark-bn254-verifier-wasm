@@ -41,7 +41,7 @@
     <div style="background-color: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; border: 2px solid white;">
         <h2>Verification</h2>
         
-        <h3>Verify with Custom Proof File (Calls SP1 directly)</h3>
+        <h3>Verify with Custom Proof File</h3>
         <input type="file" id="proofFileInput" accept=".bin">
         <button id="verifyGroth16WithSP1">Verify w/ Groth16</button>
         <button id="verifyPlonkWithSP1">Verify w/ Plonk</button>
@@ -50,13 +50,13 @@
     </div>
 
     <script type="module">
-        import init, { verify_proof_sp1, ProofMode } from './pkg/snark_bn254_verifier.js';
+        import init, { verify_proof, ProofMode } from './pkg/snark_bn254_verifier.js';
 
         async function initializeWasm() {
             await init();
         }
 
-        async function verifyProofWithSP1(proofMode) {
+        async function verifyProof(proofMode) {
             try {
                 const fileInput = document.getElementById('proofFileInput');
                 if (!fileInput.files || fileInput.files.length === 0) {
@@ -68,8 +68,8 @@
                 const arrayBuffer = await file.arrayBuffer();
                 const contents = new Uint8Array(arrayBuffer);
 
-                // Pass the bytes to verify_proof_sp1
-                const result = await verify_proof_sp1(contents, proofMode);
+                // Pass the bytes to verify_proof
+                const result = await verify_proof(contents, proofMode);
                 
                 const timestamp = new Date().toISOString();
                 const filename = file.name;
@@ -83,17 +83,17 @@
             }
         }
 
-        function verifyGroth16WithSP1() {
-            verifyProofWithSP1(ProofMode.Groth16);
+        function verifyGroth16() {
+            verifyProof(ProofMode.Groth16);
         }
 
-        function verifyPlonkWithSP1() {
-            verifyProofWithSP1(ProofMode.Plonk);
+        function verifyPlonk() {
+            verifyProof(ProofMode.Plonk);
         }
 
         initializeWasm().then(() => {
-            document.getElementById('verifyGroth16WithSP1').addEventListener('click', verifyGroth16WithSP1);
-            document.getElementById('verifyPlonkWithSP1').addEventListener('click', verifyPlonkWithSP1);
+            document.getElementById('verifyGroth16WithSP1').addEventListener('click', verifyGroth16);
+            document.getElementById('verifyPlonkWithSP1').addEventListener('click', verifyPlonk);
         });
     </script>
 </body>
