@@ -10,7 +10,11 @@ Both SP1's prover functions `build_plonk_bn254_artifacts_with_dummy()` and `buil
 
 [`Groth16Bn254Prover()`](https://github.com/succinctlabs/sp1/blob/db08c629584bd014b7ef886b5c25d3130bd9b047/crates/recursion/gnark-ffi/src/groth16_bn254.rs#L59) (GNARK's FFI) is then called with the constraints and witness to generate the proving key and verification key (groth16_vk.bin, plonk_vk.bin).
 
+See SP1 FFI [BuildPlonk()](https://github.com/succinctlabs/sp1/blob/dev/crates/recursion/gnark-ffi/go/sp1/build.go#L21) and [BuildGroth16()](https://github.com/succinctlabs/sp1/blob/dev/crates/recursion/gnark-ffi/go/sp1/build.go#L198) for circuit compilation.
+
 `vk/circuits/src/main.rs` is used to download the plonk_vk.bin and groth16_vk.bin files in the `vk` folder, by calling the `install_circuit_artifacts()` function from the [sp1-sdk](https://github.com/succinctlabs/sp1-sdk).
 
-
-
+# References
+- [R1CS Explainer](https://learn.0xparc.org/materials/circom/additional-learning-resources/r1cs%20explainer/)
+- [BN254 For The Rest Of Us](https://hackmd.io/@jpw/bn254)
+- [ARK for Groth16](https://github.com/arkworks-rs/groth16)
